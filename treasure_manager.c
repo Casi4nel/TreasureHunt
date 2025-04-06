@@ -45,7 +45,7 @@ void add(char *id)
         sprintf(newpath,"./%s",id);
         sprintf(logfile, "%s/logging-file.txt", newpath);
         #ifdef __linux__
-            int dirok= mkdir(name, 777); /* Or what parameter you need here ... */
+            int dirok= mkdir(newDirPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         #else
             int dirok= mkdir(newpath);
         #endif
@@ -71,7 +71,14 @@ void add(char *id)
             perror("Current direcotry could not be opened\n");
             return;
         }
-        if(CreateSymbolicLinkA(logfile, OGlog, 0) < 0) {
+        BOOLEAN symbool=TRUE;
+        int symOK=1;
+        #ifdef __linux__
+            int symOK=symlink(logfile, OGlog);
+        #else
+            symbool = CreateSymbolicLinkA(logfile, OGlog, 0);
+        #endif
+        if(symbool < 0 && symOK < 0 ) {
             perror("Symlink error");
             fclose(log);
             return;
@@ -86,7 +93,7 @@ void add(char *id)
     }
     FILE *f = fopen(filepath, "ab+");
     if(!f) {
-        perror("eroare la deschiderea sau crearea fisierului treasures\n");
+        perror("Error creating file\n");
         return;
     }
     Treasure treasure = create();
@@ -135,7 +142,7 @@ void list(char *id) {
         return;
     }
     Treasure treasure;
-    printf("The list of tresures %s:\n", id);
+    printf("The list of tresures for %s:\n", id);
     while(fread(&treasure, sizeof(Treasure), 1, f)) {
         printTreasure(&treasure);
     }
@@ -196,6 +203,16 @@ void view(char *id,int TreasureId)
         perror("Error closing log file\n");
         return;
     }
+
+}
+
+void remove_treasure(char *id, int TreasureId)
+{
+
+}
+
+void remove_hunt(char *id)
+{
 
 }
 
