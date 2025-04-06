@@ -71,16 +71,90 @@ void list(char *id) {
         printTreasure(&treasure);
     }
     fprintf(log, "Hunt %s shown.\n", id);
+
     if(fclose(f)) {
         perror("Error closing file");
         return;
     }
+    if(fclose(log)) {
+        perror("Error closing log file");
+        return;
+    }
 }
 
-
-
-int main()
+void view(char *id,int TreasureId)
 {
-    printf("Sall");
+    char fp[150];
+    char logfile[150];
+    int OK=0;
+    sprintf(fp, "%s/treasures", id);
+    sprintf(logfile, "%s/logfile.txt", id);
+    FILE *log= fopen(logfile, "at");
+    if(!log) {
+        perror("Logfile could not open");
+        return;
+    }
+    FILE *f = fopen(fp, "rb");
+    if(!f) {
+        perror("Hunt not made");
+        return;
+    }
+    Treasure treasure;
+    while(fread(&treasure, sizeof(Treasure), 1, f)) {
+        if(treasure.TreasureId == TreasureId) {
+            printTreasure(&treasure);
+            OK = 1;
+            break;
+        }
+    }
+
+    if(OK)
+    {
+        fprintf(log, "%d treasure found", TreasureId);
+    }
+    else
+    {
+        fprintf(log, "%d treasure not found", TreasureId);
+        printf("%d treasure not found", TreasureId);
+    }
+
+    if(fclose(f)) {
+        perror("Error closing file");
+        return;
+    }
+    if(fclose(log)) {
+        perror("Error closing log file");
+        return;
+    }
+
+}
+
+int main(int argc,char **argv) {
+    if(argc < 2) {
+        printf("Utilisation: %s <command> [<parameter>]\n", argv[0]);
+        return 1;
+    }
+    if(!strcmp(argv[1], "add")) {
+        if(argc < 3) {
+            printf("Utilisation: %s add <hunt>\n", argv[0]);
+            return 1;
+        }
+        add(argv[2]);
+    } else if(!strcmp(argv[1], "list")) {
+        if(argc < 3) {
+            printf("Utilisation: %s list <hunt>\n", argv[0]);
+            return 1;
+        }
+        list(argv[2]);
+    } else if(!strcmp(argv[1], "view")) {
+        if(argc < 4) {
+            printf("Utilisation: %s view <hunt> <id>\n", argv[0]);
+            return 1;
+        }
+        view(argv[2], atoi(argv[3]));
+    } else {
+        printf("Unknown command: %s\n", argv[1]);
+        return 1;
+    }
     return 0;
 }
