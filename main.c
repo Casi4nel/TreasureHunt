@@ -1,4 +1,5 @@
 #include "thunt.h"
+#include <dirent.h>
 
 typedef struct gps{
     float longitude;
@@ -29,16 +30,84 @@ Treasure create() {
     return treasure;
 }
 
-void getter(char *cwd, char *id)
-{
-    getcwd(cwd, 100);
-    strcat(cwd, "/");
-    strcat(cwd, id);
-}
-
 void add(char *id)
 {
+    DIR *dir = opendir(id);
+    char newpath[100];
+    char OGlog[150];
+    char logfile[150];
+    char target[500];
 
+    sprintf(OGlog, "logging-file-%s.txt", id);
+    int new = 0;
+    if(!dir) {
+        new = 1;
+        sprintf(newpath,"./%s",id);
+        sprintf(logfile, "%s/logging-file.txt", newpath);
+        #ifdef __linux__
+            int dirok= mkdir(name, 777); /* Or what parameter you need here ... */
+        #else
+            int dirok= mkdir(newpath);
+        #endif
+        if( dirok < 0) {
+            perror("Could not create hunt\n");
+            return;
+        }
+    }
+
+    sprintf(logfile, "%s/logging-file.txt", id);
+    char cwd[256];
+    getcwd(cwd, sizeof(cwd));
+    sprintf(target, "%s/%s", cwd, logfile);
+    FILE *log = fopen(logfile, "at");
+    if(!log) {
+        perror("Logfile could not open\n");
+        return;
+    }
+
+    if(new) {
+        dir = opendir(newpath);
+        if(!dir) {
+            perror("Current direcotry could not be opened\n");
+            return;
+        }
+        if(CreateSymbolicLinkA(logfile, OGlog, 0) < 0) {
+            perror("Symlink error");
+            fclose(log);
+            return;
+        }
+    }
+
+    char filepath[150];
+    if(new) {
+        sprintf(filepath, "%s/%s", newpath, "treasures");
+    } else {
+        sprintf(filepath, "%s/treasures", id);    
+    }
+    FILE *f = fopen(filepath, "ab+");
+    if(!f) {
+        perror("eroare la deschiderea sau crearea fisierului treasures\n");
+        return;
+    }
+    Treasure treasure = create();
+    if(fwrite(&treasure, sizeof(Treasure), 1, f) != 1) {
+        perror("Error reading from file\n");
+        return;
+    }
+    fprintf(log, "Treasure %d added\n", treasure.TreasureId);
+
+    if(closedir(dir) < 0) {
+        perror("Error closind direcotory\n");
+        return;
+    }
+    if(fclose(f)) {
+        perror("Error closing file\n");
+        return;
+    }
+    if(fclose(log)) {
+        perror("Error closing log file\n");
+        return;
+    }
 }
 
 void printTreasure(Treasure *treasure) {
@@ -57,12 +126,12 @@ void list(char *id) {
     sprintf(logfile, "%s/logfile.txt", id);
     FILE *log= fopen(logfile, "at");
     if(!log) {
-        perror("Logfile could not open");
+        perror("Logfile could not open\n");
         return;
     }
     FILE *f = fopen(fp, "rb");
     if(!f) {
-        perror("Hunt not made");
+        perror("Hunt not made\n");
         return;
     }
     Treasure treasure;
@@ -73,11 +142,11 @@ void list(char *id) {
     fprintf(log, "Hunt %s shown.\n", id);
 
     if(fclose(f)) {
-        perror("Error closing file");
+        perror("Error closing file\n");
         return;
     }
     if(fclose(log)) {
-        perror("Error closing log file");
+        perror("Error closing log file\n");
         return;
     }
 }
@@ -91,17 +160,18 @@ void view(char *id,int TreasureId)
     sprintf(logfile, "%s/logfile.txt", id);
     FILE *log= fopen(logfile, "at");
     if(!log) {
-        perror("Logfile could not open");
+        perror("Logfile could not open\n");
         return;
     }
     FILE *f = fopen(fp, "rb");
     if(!f) {
-        perror("Hunt not made");
+        perror("Hunt not made\n");
         return;
     }
     Treasure treasure;
     while(fread(&treasure, sizeof(Treasure), 1, f)) {
         if(treasure.TreasureId == TreasureId) {
+            printf("Treasure %d found: \n", TreasureId);
             printTreasure(&treasure);
             OK = 1;
             break;
@@ -110,20 +180,20 @@ void view(char *id,int TreasureId)
 
     if(OK)
     {
-        fprintf(log, "%d treasure found", TreasureId);
+        fprintf(log, "Treasure %d found\n", TreasureId);
     }
     else
     {
-        fprintf(log, "%d treasure not found", TreasureId);
-        printf("%d treasure not found", TreasureId);
+        fprintf(log, "Treasure %d not found\n", TreasureId);
+        printf("Treasure %d not found\n", TreasureId);
     }
 
     if(fclose(f)) {
-        perror("Error closing file");
+        perror("Error closing file\n");
         return;
     }
     if(fclose(log)) {
-        perror("Error closing log file");
+        perror("Error closing log file\n");
         return;
     }
 

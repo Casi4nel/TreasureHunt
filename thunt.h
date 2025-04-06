@@ -1,11 +1,14 @@
 #include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <stdio.h>   
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <windows.h>
 
 void add(char *id);
 
