@@ -45,14 +45,8 @@ void add(char *id)
         new = 1;
         sprintf(newpath,"./%s",id);
         sprintf(logfile, "%s/logging_file.txt", newpath);
-
-        #ifdef __linux__
-            int dirok= mkdir(newDirPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        #else
-            int dirok= mkdir(newpath);
-        #endif
-
-        if( dirok < 0) 
+        int dir= mkdir(newpath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if( dir < 0) 
         {
             perror("Could not create hunt\n");
             return;
@@ -69,7 +63,6 @@ void add(char *id)
         perror("Logfile could not open\n");
         return;
     }
-
     if(new) 
     {
         dir = opendir(newpath);
@@ -78,16 +71,9 @@ void add(char *id)
             perror("Current directory could not be opened\n");
             return;
         }
-        BOOLEAN symbool=TRUE;
-        int symOK=1;
 
-        #ifdef __linux__
-            int symOK=symlink(logfile, OGlog);
-        #else
-            symbool = CreateSymbolicLinkA(logfile, OGlog, 0);
-        #endif
-
-        if(symbool < 0 && symOK < 0 ) 
+        int sym=symlink(logfile, OGlog);
+        if(sym < 0 ) 
         {
             perror("Symlink error");
             fclose(log);
@@ -327,16 +313,9 @@ void remove_hunt(char *id)
     sprintf(fp, "%s/treasures", id);
     sprintf(logfile, "%s/logging_file.txt", id);
     sprintf(OGlog, "logging_file-%s.txt", id);
+    int unlk=unlink(OGlog);
 
-    WINBOOL dellwin=TRUE;
-    int delllin=1;
-    #ifdef __linux__
-            delllin=unlink(OGlog);
-    #else
-            dellwin= DeleteFileA(OGlog);
-    #endif
-
-    if(dellwin < 0 && delllin < 0) 
+    if(unlk < 0) 
     {
         perror("Symbloic link could not be broken");
         return;
@@ -417,3 +396,4 @@ int main(int argc,char **argv)
     }
     return 0;
 }
+
