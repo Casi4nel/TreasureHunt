@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <fcntl.h>
 
 void add(char *id);
 
