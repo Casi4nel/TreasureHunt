@@ -72,8 +72,7 @@ void add(char *id)
             return;
         }
 
-        int sym=symlink(logfile, OGlog);
-        if(sym < 0 ) 
+        if(symlink(logfile, OGlog) < 0 ) 
         {
             perror("Symlink error");
             fclose(log);
