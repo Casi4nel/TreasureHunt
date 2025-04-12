@@ -235,71 +235,73 @@ void view(char *id,int TreasureId)
 }
 
 
-//could not make it to convert from fwrite to write and fread to read
 void remove_treasure(char *id, int TreasureId)
 {
     char logfile[200];
     char fp[200];
     char tmp[200];
+    char logbuff[256];
     Treasure treasure;
     int OK = 0;
     sprintf(logfile, "%s/logging_file.txt", id);
     sprintf(fp, "%s/treasures", id);
 
-    FILE *log = fopen(logfile, "at");
+    int log = open(logfile, O_RDWR | O_CREAT | O_APPEND, 0644);
     if(!log) 
     {
         perror("Could not open log file");
         return;
     }
-    FILE *f = fopen(fp, "rb+");
+    int f = open(fp, O_RDWR | O_CREAT | O_APPEND, 0644);
     if(!f) 
     {
         perror("Could not open file");
         return;
     }
     sprintf(tmp, "%s/tmp.txt", id);
-    FILE *fis = fopen(tmp, "wb+");
+    int fis = open(tmp, O_RDWR | O_CREAT | O_TRUNC, 0644);
     if(!fis) 
     {
         perror("Error opening file");
-        fclose(f);
+        close(f);
         return;
     }
 
-    while(fread(&treasure, sizeof(Treasure), 1, f)) 
+    while(read(f, &treasure, sizeof(Treasure)) == sizeof(Treasure)) 
     {
         if(treasure.TreasureId == TreasureId) 
         {
             OK = 1;
             continue;
         }
-        fwrite(&treasure, sizeof(Treasure), 1, fis);
+        write(fis, &treasure, sizeof(Treasure));
     }
     if(!OK) 
     {
         printf("Treasure %d does not exist\n", TreasureId);
-        fprintf(log, "Treasure %d does not exist\n", TreasureId);
+        sprintf(logbuff, "Treasure %d does not exist\n", TreasureId),
+        write(log, &logbuff, strlen(logbuff));
         remove("fis");
         return;
     }
     else
     {
-        fprintf(log, "Treasure %d was deleted\n", TreasureId);
+        sprintf(logbuff, "Treasure %d was deleted\n", TreasureId),
+        write(log, &logbuff, strlen(logbuff));
     }
 
-    if(fclose(f)) 
+    if(close(f)) 
     {
         perror("Error closing file");
-        fclose(fis);
+        close(fis);
         return;
     }
-    if(fclose(fis)) 
+    if(close(fis)) 
     {
         perror("Error closing file");
         return;
     }
-    if(fclose(log)) 
+    if(close(log)) 
     {
         perror("Error colsing log file");
         return;
@@ -309,7 +311,7 @@ void remove_treasure(char *id, int TreasureId)
         perror("Error removing file");
         return;
     }
-    if(rename(tmp, fp) < 0) 
+    if(rename(tmp, fp) !=0) 
     {
         perror("Error renaming file");
         return;
