@@ -13,6 +13,25 @@ typedef struct Treasure{
     int value;
 }Treasure;
 
+int hunt_cnt=0;
+int treasure_cnt[MAXSIZE];
+void init_cnt()
+{
+    for(int i=0 ; i< MAXSIZE; i++)
+    {
+        treasure_cnt[i]=0;
+    }
+}
+
+void list_hunts()
+{
+    printf("Nr of hunts: %d", hunt_cnt);
+    for(int i=0; i< hunt_cnt;i++)
+    {
+        printf("Nr of treasures in hunt%d: %d", i+1, treasure_cnt[i]);
+    }
+}
+
 Treasure create() 
 {
     printf("Enter id:\n");
@@ -78,6 +97,7 @@ void add(char *id)
             close(log);
             return;
         }
+        hunt_cnt++;
     }
 
     char fp[200];
@@ -122,6 +142,7 @@ void add(char *id)
         perror("Error closing log file\n");
         return;
     }
+    treasure_cnt[hunt_cnt-1]++;
 }
 
 void printTreasure(Treasure *treasure) 
@@ -237,6 +258,7 @@ void view(char *id,int TreasureId)
 
 void remove_treasure(char *id, int TreasureId)
 {
+    init_cnt();
     char logfile[200];
     char fp[200];
     char tmp[200];
@@ -370,6 +392,7 @@ int main(int argc,char **argv)
         if(argc < 3) 
         {
             printf("Utilisation: %s --list <hunt>\n", argv[0]);
+            printf("%s", argv[2]);
             return 1;
         }
         list(argv[2]);
@@ -400,7 +423,11 @@ int main(int argc,char **argv)
                 return 1;
             }
             remove_hunt(argv[2]);
-    } 
+    }
+    else if (!strcmp(argv[1], "--list_hunts"))
+    {
+        list_hunts();
+    }
     else if(!strcmp(argv[1], "--help")) 
     {
             printf("List of comands:\n");

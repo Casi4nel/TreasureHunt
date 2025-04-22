@@ -1,15 +1,17 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <signal.h>
 #include <time.h>
-#include <stdio.h>   
-#include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <dirent.h>
+#include <sys/wait.h>
 #include <fcntl.h>
+#include <dirent.h>
+
+#define MAXSIZE 20
 
 void add(char *id);
 
