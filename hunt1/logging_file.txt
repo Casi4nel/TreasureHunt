@@ -1,0 +1,8 @@
+Treasure 1 added
+Treasure 2 added
+Hunt hunt1 shown.
+Treasure 3 added
+Hunt hunt1 shown.
+Treasure 3 found
+Hunt hunt1 shown.
+Hunt hunt1 shown.

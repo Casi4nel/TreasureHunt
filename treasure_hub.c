@@ -5,11 +5,34 @@ char huntid[6], id[5];
 int hunt_cnt;
 int treasure_cnt[MAXSIZE];
 
-//still not done
-void list_hunts(int sig)
+void list_hunts() 
 {
-    printf("\n");
-    system("./treasure_manager --list_hunts");
+    DIR *d = opendir(".");
+    if (!d) {
+        perror("opendir");
+        return;
+    }
+    struct dirent *entry;
+    char path[300];
+    int count;
+    printf("Hunts and treasure counts:\n");
+    while ((entry = readdir(d)) != NULL) {
+            //printf("Sall");
+        if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+            snprintf(path, sizeof(path), "%s/treasures", entry->d_name);
+            int fd = open(path, O_RDONLY);
+            if (fd >= 0) 
+            {
+
+                count = 0;
+                char buf[168]; 
+                while (read(fd, buf, sizeof(buf)) > 0) count++;
+                close(fd);
+                printf("Hunt: %s, Count: %d\n", entry->d_name, count);
+            }
+        }
+    }
+    closedir(d);
 }
 
 void list_treasures(int sig)
@@ -17,8 +40,17 @@ void list_treasures(int sig)
     printf("\n");
     printf("Enter huntid: "); scanf("%s", huntid);
     char comm[256];
-    sprintf(comm,"./treasure_manager --list %s", huntid);
-    system(comm);
+    //sprintf(comm,"./treasure_manager --list %s", huntid);
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        return;
+    }
+    if (pid == 0) {
+        execlp("./treasure_manager","treasure_manager","--list", huntid,(char* )NULL);
+        perror("execlp");
+        _exit(EXIT_FAILURE);
+    }
 
 }
 
