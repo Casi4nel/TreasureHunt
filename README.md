@@ -55,6 +55,7 @@ To start the program
 ```
 
 Choose a command from the interactive interface<br />
+- help<br />
 - start_monitor<br />
 - list_hunts<br />
 - list_treasures<br />
