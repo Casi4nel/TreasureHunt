@@ -10,4 +10,4 @@ calculate_score: calculate_score.c
 	gcc -Wall -o calculate_score calculate_score.c
 
 clean:
-	rm -f treasure_manager treasure_hub
+	rm -f treasure_manager treasure_hub calculate_score
