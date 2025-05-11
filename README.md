@@ -59,5 +59,6 @@ Choose a command from the interactive interface<br />
 - list_hunts<br />
 - list_treasures<br />
 - view_treasure<br />
+- calculate_score<br />
 - stop_monitor<br />
 - exit
