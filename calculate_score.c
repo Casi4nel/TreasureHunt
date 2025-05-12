@@ -44,58 +44,62 @@ int main(int argc, char **argv)
         perror("opendir");
         return 0;
     }
-    
+    //max 10 hunts
     while ((entry = readdir(d)) != NULL) 
     {
         if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) 
         {
             snprintf(path, sizeof(path), "%s/treasures", entry->d_name);
-            int fd = open(path, O_RDONLY);
-
-            if (fd >= 0) 
+            //printf("%s", entry->d_name);
+            if( strcmp(entry->d_name,"hunt1")==0 || strcmp(entry->d_name,"hunt2")==0 || strcmp(entry->d_name,"hunt3")==0 || strcmp(entry->d_name,"hunt4")==0 || strcmp(entry->d_name,"hunt5")==0 || strcmp(entry->d_name,"hunt6")==0 || strcmp(entry->d_name,"hunt7")==0 || strcmp(entry->d_name,"hunt8")==0 || strcmp(entry->d_name,"hunt9")==0 || strcmp(entry->d_name,"hunt10")==0)
             {
-                while ((read(fd, &tr, sizeof(Treasure))) == sizeof(Treasure)) 
-                {
-                    int user_found = 0;
+                //printf("%s", path);
+                int fd = open(path, O_RDONLY);
 
-                    for (int i = 0; i < user_count; i++) 
+                if (fd >= 0) 
+                {
+                    while ((read(fd, &tr, sizeof(Treasure))) == sizeof(Treasure)) 
                     {
-                        if (strcmp(users[i].user, tr.user) == 0) 
+                        int user_found = 0;
+
+                        for (int i = 0; i < user_count; i++) 
                         {
-                            users[i].score += tr.value;
-                            user_found = 1;
-                            break;
+                            if (strcmp(users[i].user, tr.user) == 0) 
+                            {
+                                users[i].score += tr.value;
+                                user_found = 1;
+                                break;
+                            }
+                        }
+
+                        if (!user_found) 
+                        {
+                            strncpy(users[user_count].user, tr.user, sizeof(users[user_count].user) - 1);
+                            users[user_count].user[sizeof(users[user_count].user) - 1] = '\0';
+                            users[user_count].score = tr.value;
+                            user_count++;
                         }
                     }
-
-                    if (!user_found) 
-                    {
-                        strncpy(users[user_count].user, tr.user, sizeof(users[user_count].user) - 1);
-                        users[user_count].user[sizeof(users[user_count].user) - 1] = '\0';
-                        users[user_count].score = tr.value;
-                        user_count++;
-                    }
+                    close(fd);
                 }
-                close(fd);
+                if (user_count == 0) 
+                {
+                    printf("No users found in %s\n", entry->d_name);
+                }
+                else
+                {
+                    printf("Scores for all users in %s:\n", entry->d_name);
+                    for (int i = 0; i < user_count; i++) 
+                    {
+                        printf("User: %s, Score: %d\n", users[i].user, users[i].score);
+                        users[i].score=0;
+                    }
+                    printf("\n");
+                    user_count=0;
+                }
             }
-
         }
-    }
 
-    if (user_count == 0) 
-    {
-        printf("No users found");
-        return 0;
     }
-    else
-    {
-        printf("Scores for all users:\n");
-        for (int i = 0; i < user_count; i++) 
-        {
-            printf("User: %s, Score: %d\n", users[i].user, users[i].score);
-        }
-        printf("\n");
-    }
-
     return 0;
 }
