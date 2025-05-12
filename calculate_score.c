@@ -51,7 +51,7 @@ int main(int argc, char **argv)
         {
             snprintf(path, sizeof(path), "%s/treasures", entry->d_name);
             //printf("%s", entry->d_name);
-            if( strcmp(entry->d_name,"hunt1")==0 || strcmp(entry->d_name,"hunt2")==0 || strcmp(entry->d_name,"hunt3")==0 || strcmp(entry->d_name,"hunt4")==0 || strcmp(entry->d_name,"hunt5")==0 || strcmp(entry->d_name,"hunt6")==0 || strcmp(entry->d_name,"hunt7")==0 || strcmp(entry->d_name,"hunt8")==0 || strcmp(entry->d_name,"hunt9")==0 || strcmp(entry->d_name,"hunt10")==0)
+            if( strcmp(entry->d_name,".git")!=0 || strcmp(entry->d_name,".vscode")!=0)
             {
                 //printf("%s", path);
                 int fd = open(path, O_RDONLY);
@@ -84,7 +84,10 @@ int main(int argc, char **argv)
                 }
                 if (user_count == 0) 
                 {
-                    printf("No users found in %s\n", entry->d_name);
+                    if(strcmp(entry->d_name,".git")==0 || strcmp(entry->d_name,".vscode")==0)
+                        continue;
+                    else
+                        printf("No users found in %s\n", entry->d_name);
                 }
                 else
                 {
