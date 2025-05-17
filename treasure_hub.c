@@ -6,20 +6,58 @@ int hunt_cnt;
 int treasure_cnt[MAXSIZE];
 mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 
+void insert_pipe(int pipe[2])
+{
+  close(pipe[0]); //close reading end			 
+  dup2(pipe[1], STDOUT_FILENO);
+  close(pipe[1]); // close writing end
+}
+
+void print_pipe(int pipe[2])
+{
+  FILE *stream;
+  char buffer[2048] = {0};
+
+  close(pipe[1]);
+  stream = fdopen(pipe[0], "r");
+  if (!stream)
+    {
+      perror("Fdopen failed");
+      exit(-1);
+    }
+
+  while (fgets(buffer, sizeof(buffer), stream))
+    {
+      printf("%s", buffer);
+    }
+
+  fclose(stream);
+  
+}
+
 void calculate_score()
 {
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        return;
+    }
+
     pid_t pid = fork();
     if (pid < 0) {
         perror("fork");
         return;
     }
     if (pid == 0) {
+        insert_pipe(pipefd);
         execlp("./calculate_score","calculate_score",(char* )NULL);
         perror("execlp");
         exit(EXIT_FAILURE);
     }
     else
     {
+        close(pipefd[1]);
+        print_pipe(pipefd);
         int status;
         if (waitpid(pid, &status, 0) < 0) {
             perror("waitpid");
@@ -29,49 +67,78 @@ void calculate_score()
 
 void list_hunts() 
 {
-    DIR *d = opendir(".");
-    if (!d) {
-        perror("opendir");
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
         return;
     }
-    struct dirent *entry;
-    char path[300];
-    int count;
-    printf("Hunts and treasure counts:\n");
-    while ((entry = readdir(d)) != NULL) {
-        if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
-            snprintf(path, sizeof(path), "%s/treasures", entry->d_name);
-            int fd = open(path, O_RDONLY);
-            if (fd >= 0) 
-            {
 
-                count = 0;
-                char buf[168]; 
-                while (read(fd, buf, sizeof(buf)) > 0) count++;
-                close(fd);
-                printf("Hunt: %s, Count: %d\n", entry->d_name, count);
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        return;
+    }
+
+    if (pid == 0) {
+        insert_pipe(pipefd);
+        DIR *d = opendir(".");
+        if (!d) {
+            perror("opendir");
+            exit(EXIT_FAILURE);
+        }
+        struct dirent *entry;
+        char path[300];
+        int count;
+        printf("Hunts and treasure counts:\n");
+        while ((entry = readdir(d)) != NULL) {
+            if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+                snprintf(path, sizeof(path), "%s/treasures", entry->d_name);
+                int fd = open(path, O_RDONLY);
+                if (fd >= 0) {
+                    count = 0;
+                    char buf[168];
+                    while (read(fd, buf, sizeof(buf)) > 0) count++;
+                    close(fd);
+                    printf("Hunt: %s, Count: %d\n", entry->d_name, count);
+                }
             }
         }
+        closedir(d);
+        exit(0);
     }
-    closedir(d);
+    else{
+        close(pipefd[1]);
+        print_pipe(pipefd);
+        waitpid(pid, NULL, 0);
+    }
 }
 
 void list_treasures()
 {
     printf("\n");
     printf("Enter huntid: "); scanf("%s", huntid);
+
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        return;
+    }
+
     pid_t pid = fork();
     if (pid < 0) {
         perror("fork");
         return;
     }
     if (pid == 0) {
+        insert_pipe(pipefd);
         execlp("./treasure_manager","treasure_manager","--list", huntid,(char* )NULL);
         perror("execlp");
         _exit(EXIT_FAILURE);
     }
     else
-    {
+    {   
+        close(pipefd[1]);
+        print_pipe(pipefd);
         int status;
         if (waitpid(pid, &status, 0) < 0) {
             perror("waitpid");
@@ -85,9 +152,29 @@ void view_treasure()
     printf("\n");
     printf("Enter huntid: "); scanf("%s", huntid);
     printf("Enter id: "); scanf("%s", id);
-    char comm[256];
-    sprintf(comm,"./treasure_manager --view %s %s", huntid, id);
-    system(comm);
+
+    int pipefd[2];
+    if (pipe(pipefd) == -1) {
+        perror("pipe");
+        return;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        return;
+    }
+
+    if (pid == 0) {
+        insert_pipe(pipefd);
+        execlp("./treasure_manager", "treasure_manager", "--view", huntid, id, (char *)NULL);
+        perror("execlp");
+        _exit(EXIT_FAILURE);
+    } else {
+        close(pipefd[1]);
+        print_pipe(pipefd);
+        waitpid(pid, NULL, 0);
+    }
 }
 
 void stop_monitor()
@@ -123,32 +210,19 @@ void handle_commands(int sig)
     {
         perror("error reading");
     }
-    if (strcmp(command, "1") == 0)
-    {
-        list_hunts();
-    }
-    else if (strcmp(command, "2") == 0)
-    {
-        list_treasures();
-    }
-    else if (strcmp(command, "3") == 0)
-    {
-        view_treasure();
-    }
-    else if (strcmp(command, "4") == 0)
-    {
-        calculate_score();
-    }
-    else
-    {
-        printf("Invalid command\n");
-    }
+
+    if (strcmp(command, "1") == 0) list_hunts();
+    else if (strcmp(command, "2") == 0) list_treasures();
+    else if (strcmp(command, "3") == 0) view_treasure();
+    else if (strcmp(command, "4") == 0) calculate_score();
+    else printf("Invalid command\n");
 
     if (close(fd) < 0)
     {
         perror("Error closing file");
     }
 }
+
 
 void monitor_procces()
 {
@@ -279,6 +353,8 @@ int main(void)
                     printf("Error sending SIGUSR to child\n");
                     exit(2);
                 }
+
+
                 //waitpid(monitor_pid, NULL, 0);
                 //wait(NULL);
                 sleep(7);
@@ -369,7 +445,14 @@ int main(void)
         else if (strcmp(action, "help") == 0)
         {
             sleep(1);
-            printf("\n List of actions: <utilisation> \n\n Start monitor: start_monitor \n List hunts: list_hunts \n List treasures: list_treasures \n View treasure: view_treasure \n Calculate score: calculate_score \n Stop monitor: stop_monitor \n Exit: exit\n");
+            printf("\nList of actions: \n\n");
+            printf("Start monitor: start_monitor\n");
+            printf("List hunts: list_hunts\n");
+            printf("List treasures: list_treasures\n");
+            printf("View treasure: view_treasure\n");
+            printf("Calculate score: calculate_score\n");
+            printf("Stop monitor: stop_monitor\n");
+            printf("Exit: exit\n");
         }
         else
         {
