@@ -1,5 +1,4 @@
 Treasure 1 added
 Treasure 2 added
-Treasure 1 found
 Hunt hunt2 shown.
-Treasure 2 found
+Treasure 1 found
